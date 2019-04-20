@@ -42,7 +42,7 @@ A operation should start with a declaration line with the name and arity separat
 2 2 1
 ```
 
-A operation should start with a declaration line with the name and 0 (will be a 0-arity operation) separated by one space. Next line sould be the element. Example:
+A constant should start with a declaration line with the name and 0 (will be a 0-arity operation) separated by one space. Next line sould be the element. Example:
 
 ```
 Zero 0
