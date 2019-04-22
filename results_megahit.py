@@ -42,6 +42,7 @@ for k in results:
         h=results[k].pop()
         value = value+h
     value = value/size
+    print(size)
     new_results[k]=value
     print()
     print(k)

@@ -73,7 +73,7 @@ def main():
         t = int(t)
         c = int(c)
         fs = [int(i) for i in eval(fs)]
-        assert all(i > 0 for i in fs)
+        assert all(i >= 0 for i in fs)
         fc = eval(fc)
         assert all(i is False or i is True for i in fc)
         tarity = int(tarity)
