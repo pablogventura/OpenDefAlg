@@ -51,7 +51,7 @@ for k in results:
 new_new_results = defaultdict(list)
 for k in new_results:
     new_new_results[k[0]].append((k[1],new_results[k]))
-cantidad = -3
+cantidad = -4
 new_new_results = {k:sorted(new_new_results[k],key=lambda x: x[0]) for k in new_new_results}
 
 print(new_new_results)
