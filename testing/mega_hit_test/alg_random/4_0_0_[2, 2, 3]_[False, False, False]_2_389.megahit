@@ -1,0 +1,11 @@
+universe [0, 1, 2, 3]
+f0 tuples: 16
+universe [0, 1, 2, 3]
+f1 tuples: 16
+universe [0, 1, 2, 3]
+f2 tuples: 64
+T0 density: 1.000000
+Target thinning turned T into 2 Ts
+********************
+DEFINABLE
+Elapsed time: 0.0033745765686035156

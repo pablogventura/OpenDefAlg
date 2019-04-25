@@ -1,0 +1,11 @@
+universe [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+f0 tuples: 256
+universe [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+f1 tuples: 256
+universe [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+f2 tuples: 4096
+T0 density: 1.000000
+Target thinning turned T into 2 Ts
+********************
+DEFINABLE
+Elapsed time: 2.7750437259674072
