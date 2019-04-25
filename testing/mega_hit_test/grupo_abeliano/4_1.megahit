@@ -1,0 +1,11 @@
+universe [0, 1, 2, 3]
+Sum tuples: 16
+universe [0, 1, 2, 3]
+Neg tuples: 4
+universe [0, 1, 2, 3]
+Zero tuples: 1
+T0 density: 1.000000
+Target thinning turned T into 2 Ts
+********************
+DEFINABLE
+Elapsed time: 0.003379344940185547
