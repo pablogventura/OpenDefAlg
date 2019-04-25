@@ -51,10 +51,11 @@ for k in results:
 new_new_results = defaultdict(list)
 for k in new_results:
     new_new_results[k[0]].append((k[1],new_results[k]))
-cantidad = 2
+cantidad = -3
 new_new_results = {k:sorted(new_new_results[k],key=lambda x: x[0]) for k in new_new_results}
-new_new_results = {k:new_new_results[k][cantidad:] for k in new_new_results}
+
 print(new_new_results)
+new_new_results = {k:new_new_results[k][cantidad:] for k in new_new_results}
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -67,7 +68,7 @@ ax.set_title('Time to decide definability')
 #plt.semilogx(2)
 # plt.loglog(basex=2)
 plt.semilogx(basex=2)
-
+print(new_new_results)
 for k in new_new_results:
     plt.plot([2,4,8,16, 32, 64][cantidad:], [i[1] for i in new_new_results[k]], label=k)
 
