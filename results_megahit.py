@@ -71,14 +71,23 @@ import numpy as np
 
 ax = plt.subplot(111)
 ax.set_ylabel('Time ($s$)')
+ax.set_xlabel('Size of Universe')
 ax.set_title('Time to decide definability')
 
 #plt.semilogx(2)
 plt.loglog(basex=2,basey=2)
 #plt.semilogx(basex=2)
 print(new_new_results)
-for k in new_new_results:
-    plt.plot([8,16, 32,64], [i[1] for i in new_new_results[k]], label=k)
+
+k = "alg_random"
+label ="Random Algebras"
+plt.plot([8,16, 32,64], [i[1] for i in new_new_results[k]], label=label)
+k = "grupo_abeliano"
+label ="Abelian Groups"
+plt.plot([8,16, 32,64], [i[1] for i in new_new_results[k]], label=label)
+k = "boole"
+label ="Boolean Algebras"
+plt.plot([8,16, 32,64], [i[1] for i in new_new_results[k]], label=label)
 
 leg = plt.legend(loc='best', ncol=1, shadow=True, fancybox=True)
 leg.get_frame().set_alpha(0.5)
