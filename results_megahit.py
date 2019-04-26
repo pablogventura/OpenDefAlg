@@ -27,6 +27,7 @@ for i, f in enumerate(files):
             elif dir.endswith("grupo_abeliano"):
 
                 size = reduce(operator.mul,list( int(x) for x in filename.split("_"))[:-1],1)
+                print(size)
             else:
                 size = map(int,filename.split("_"))
 
@@ -52,10 +53,17 @@ new_new_results = defaultdict(list)
 for k in new_results:
     new_new_results[k[0]].append((k[1],new_results[k]))
 cantidad = -3
-new_new_results = {k:sorted(new_new_results[k],key=lambda x: x[0]) for k in new_new_results}
+new_new_results2 = {k:sorted(new_new_results[k],key=lambda x: x[0]) for k in new_new_results}
+
+print(new_new_results2)
+new_new_results=dict()
+for k in new_new_results2:
+    if len(new_new_results2[k][cantidad:]) == -cantidad:
+        new_new_results[k] = new_new_results2[k][cantidad:]
+    else:
+        new_new_results[k] = new_new_results2[k]
 
 print(new_new_results)
-new_new_results = {k:new_new_results[k][cantidad:] for k in new_new_results}
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -70,7 +78,7 @@ ax.set_title('Time to decide definability')
 plt.semilogx(basex=2)
 print(new_new_results)
 for k in new_new_results:
-    plt.plot([2,4,8,16, 32, 64][cantidad:], [i[1] for i in new_new_results[k]], label=k)
+    plt.plot([8,16, 32], [i[1] for i in new_new_results[k]], label=k)
 
 leg = plt.legend(loc='best', ncol=1, shadow=True, fancybox=True)
 leg.get_frame().set_alpha(0.5)
