@@ -81,15 +81,15 @@ print(new_new_results)
 
 k = "alg_random"
 label ="Random Algebras"
-plt.plot([8,16, 32,64], [i[1] for i in new_new_results[k]], label=label)
+plt.plot([4,8,16, 32], [i[1] for i in new_new_results[k]], label=label,color="black",marker='v')
 k = "grupo_abeliano"
 label ="Abelian Groups"
-plt.plot([8,16, 32,64], [i[1] for i in new_new_results[k]], label=label)
+plt.plot([4,8,16, 32], [i[1] for i in new_new_results[k]], label=label,color="black",marker='o')
 k = "boole"
 label ="Boolean Algebras"
-plt.plot([8,16, 32,64], [i[1] for i in new_new_results[k]], label=label)
+plt.plot([4,8,16, 32], [i[1] for i in new_new_results[k]], label=label,color="black",marker='s')
 
-leg = plt.legend(loc='best', ncol=1, shadow=True, fancybox=True)
+leg = plt.legend(loc='best', ncol=1) #, shadow=True)#, fancybox=True)
 leg.get_frame().set_alpha(0.5)
 
 
