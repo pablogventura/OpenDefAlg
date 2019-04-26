@@ -1,0 +1,11 @@
+universe [0, 1, 2, 3, 4, 5, 6, 7]
+Sum tuples: 64
+universe [0, 1, 2, 3, 4, 5, 6, 7]
+Neg tuples: 8
+universe [0, 1, 2, 3, 4, 5, 6, 7]
+Zero tuples: 1
+T0 density: 1.000000
+Target thinning turned T into 2 Ts
+********************
+DEFINABLE
+Elapsed time: 0.03432273864746094
