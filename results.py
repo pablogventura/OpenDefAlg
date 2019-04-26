@@ -50,7 +50,7 @@ for n,h,m in temp_data:
     if n == "ret":
         data.append(("Distributive\nLattices",h,m))
     elif n == "grupo_no_abeliano":
-        data.append(("Not Abelian\nGroups",h,m))
+        data.append(("Groups",h,m))
     elif n == "grupo_abeliano":
         data.append(("Abelian\nGroups",h,m))
     elif n == "boole":
@@ -68,12 +68,12 @@ ind = np.arange(len(hit_means))  # the x locations for the groups
 width = 0.35  # the width of the bars
 
 fig, ax = plt.subplots()
-rects1 = ax.bar(ind - width/2, hit_means, width, color='white', hatch="//", edgecolor='black', label='Tuple Types Strategy')
-rects2 = ax.bar(ind + width/2, minion_means, width, color='black', edgecolor='black', label='Isomorphisms Strategy')
+rects1 = ax.bar(ind - width/2, hit_means, width, color='white', hatch="//", edgecolor='black', label='IsoType Strategy')
+rects2 = ax.bar(ind + width/2, minion_means, width, color='black', edgecolor='black', label='CPS Strategy')
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Time ($s$)')
-ax.set_title('Times by families of algebras')
+ax.set_title('Amounts of time by families of algebras')
 ax.set_xticks(ind)
 ax.set_xticklabels(v[0] for v in data)
 ax.legend()
