@@ -15,6 +15,7 @@ def main():
         model = parser()
     print("*"*20)
     targets_rels = tuple(model.relations[sym] for sym in model.relations.keys() if sym[0] == "T")
+    
     for t in targets_rels:
         del model.relations[t.sym]
 
@@ -179,42 +180,15 @@ def isOpenDef(A, Tgs):
 
     Os = {e: Partition(A.universe, e, Tgs) for e in spectrum}  # Inicialización de las orbitas
     # Inicializacion del stack
-    S = [(A, chain(*[permutations_star(A.universe, r=e)
-                     for e in spectrum]), {e: MicroPartition() for e in spectrum})]
-    while S:
-
-        (E, l, rs) = S.pop()
-        for t in l:
-            # if t==(3,):
-            #     import ipdb;ipdb.set_trace()
-            r = rs[len(t)]
-            O = Os[len(t)]
-            if not O.hasKnowType(t):
-                h = TupleModelHash(E, t)
-                u = h.universe()
-                if len(u) == len(E):  # nos quedamos en el mismo tamaño
-                    # es un tipo conocido (un automorfismo para checkear)
-                    if h in r:
-                        gamma = h.iso(r.representative(h))
-                        propagarGrosa(Os, gamma)
-                    else:  # es un tipo no conocido de potencial automorfismo
-                        O.setType(t, h)  # Etiqueto la orbita de t
-                        r.newType(t, h)
-                else:  # Genera algo mas chico
-                    # es de un tipo conocido (un subiso para checkear)
-                    if h in O:
-                        gamma = O[h].iso(h)
-                        propagarGrosa(Os, gamma)
-                    else:
-                        S.append((E, l, rs))
-                        mps = {len(t): MicroPartition({h: t})}
-                        for e in spectrum:
-                            if e not in mps:
-                                mps[e] = MicroPartition()
-                        S.append((A, chain(*[permutations_star(h.universe(), r=e)
-                                             for e in spectrum]), mps))
-                        O.setType(t, h)  # Etiqueto la orbita de t
-                        break
+    for t in chain(*[permutations_star(A.universe, r=e) for e in spectrum]):
+        O = Os[len(t)]
+        if not O.hasKnowType(t):
+            h = TupleModelHash(A, t)
+            if h in O:
+                gamma = O[h].iso(h)
+                propagarGrosa(Os, gamma)
+            else:
+                O.setType(t, h)  # Etiqueto la orbita de t
 
     return True
 
