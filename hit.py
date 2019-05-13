@@ -38,6 +38,10 @@ class TupleModelHash():
         for op in model.operations:
             self.ops[model.operations[op].arity].add(model.operations[op])
 
+        self.rels = defaultdict(set)
+        for rel in model.relations:
+            self.rels[model.relations[rel].arity].add(model.relations[rel])
+
         self.H = [generator_tuple]
         i = len(generator_tuple)-1
         self.T = defaultdict(set, {a: {j}
@@ -55,15 +59,24 @@ class TupleModelHash():
                             x = f(*tup)
                             self.T[x].add(i)
                             if self.debug:
-                                self.V[-1] = x
+                                self.V.append(x)
                             if all(x not in h for h in self.H):
                                 self.H[-1].append(x)
             O = self.H[-1]
         self.T = {k: frozenset(self.T[k]) for k in self.T}
         self.H.pop(-1)
 
+        # hit relacional
+        self.R = []
+        for ar in sorted(self.rels):
+            for r in sorted(self.rels[ar], key=lambda r: r.sym):
+                self.R.append(set())
+                for tup in product(flath, repeat=ar):
+                    if r(*tup):
+                        self.R[-1].add(tuple(flath.index(i) for i in tup))
+        self.R = [frozenset(r) for r in self.R]
     def __eq__(self, other):
-        return set(self.T.values()) == set(other.T.values())
+        return set(self.T.values()) == set(other.T.values()) and self.R == other.R
 
     def __hash__(self):
         return hash(frozenset(self.T.values()))
@@ -92,6 +105,7 @@ class TupleModelHash():
         result += indent("Tuple=%s,\n" % self.generator_tuple)
         result += indent("History=%s,\n" % self.H)
         result += indent("Type=%s,\n" % {k: sorted(self.T[k]) for k in self.T})
+        result += indent("Relations=%s,\n" % self.R)
         if self.debug:
             result += indent("V=%s,\n" % self.V)
         result += ")"
@@ -103,11 +117,11 @@ if __name__ == "__main__":
     Para testeo
     """
 
-    from parser import parser
-    MODEL = parser("./model_examples/suma4.model", preprocess=True)
+    from parser.parser import parser
+    MODEL = parser("./model_examples/posetrombo.model", preprocess=True)
     # print(MODEL)
-    TA = [1, 2]
-    TB = [2, 3]
+    TA = [0, 3]
+    TB = [1, 2]
     FA = TupleModelHash(MODEL, TA)
     FB = TupleModelHash(MODEL, TB)
     print(FA)

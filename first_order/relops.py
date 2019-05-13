@@ -45,7 +45,8 @@ class Relation(object):
             if set(t) <= subuniverse:
                 result.add(t)
         return result
-
+    def __hash__(self):
+        return hash(frozenset(self.r))
     def __eq__(self, other):
         return (self.sym, self.r) == (other.sym, other.r)
 
