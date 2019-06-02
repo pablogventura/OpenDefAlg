@@ -71,8 +71,8 @@ import numpy as np
 
 ax = plt.subplot(111)
 ax.set_ylabel('Time ($s$)')
-ax.set_xlabel('Size of Universe')
-ax.set_title('Time to decide definability')
+ax.set_xlabel('Cardinality of Universe')
+ax.set_title('Amount of time to decide definability')
 
 #plt.semilogx(2)
 plt.loglog(basex=2,basey=2)
