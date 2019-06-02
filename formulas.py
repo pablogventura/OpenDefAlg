@@ -3,7 +3,7 @@
 
 # TERMS
 
-from unicode import subscript
+from myunicode import subscript
 from itertools import product, combinations
 from collections import defaultdict
 

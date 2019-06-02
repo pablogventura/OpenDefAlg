@@ -4,7 +4,7 @@
 """
 Modulo para calcular HIT de una tupla en un modelo
 """
-
+import formulas
 from itertools import product
 from collections import defaultdict
 from misc import indent
@@ -16,7 +16,7 @@ class StepperTupleModelHash():
     Clase de HIT, toma un modelo ambiente y la tupla generadora
     """
 
-    def __init__(self, model, arity, partition=[],alphabet=[], sintax=[], news=[]):
+    def __init__(self, model, arity, partition=[],alphabet=[], syntax=[], news=[]):
         """
         Calcula HIT de a pasos de una aridad en un modelo.
         Si viene en th una tupla (T,H), se considera que son
@@ -27,7 +27,7 @@ class StepperTupleModelHash():
         
         if not alphabet:
             alphabet = [[],list(range(arity))]
-            sintax=[]
+            syntax = [(None,i) for i in range(arity)]
 
         self.ops = defaultdict(set)
         for op in model.operations:
@@ -39,7 +39,9 @@ class StepperTupleModelHash():
         self.T = defaultdict(set, {a: {j}
                                    for j, a in enumerate(generator_tuple)})
         O = self.H[-1]
-
+    def next_in_language(self,language,element):
+        return language[language.index(element) + 1]
+    def step(self):
         while O:
             flath = [item for sublist in self.H for item in sublist]
             self.H.append([])
