@@ -97,6 +97,31 @@ class StepperTupleModelHash():
         return result
 
 
+def is_open_def_recursive(block):
+    """
+    Algoritmo "posta", es recursivo
+        un bloque tiene tuplas acompañadas por su historia parcial y un hit parcial que etiqueta al bloque
+    input: un bloque mixto
+    output:
+    """
+    
+    if block.finished():
+        # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
+        return False
+    
+    blocks = block.step()
+    formula = []
+    recursive_blocks = []
+    for b in blocks:
+        if b.is_all_in_target():
+            formula.append(b.formula)
+            continue
+        if b.is_disjunt_to_target():
+            continue
+        recursive_call = is_open_def_recursive(b)
+        if not recursive_call:
+            return False
+
 if __name__ == "__main__":
     """
     Para testeo
