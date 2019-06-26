@@ -232,9 +232,6 @@ def main():
     start_hit = time()
 
 
-    print(is_open_def(model, targets_rels))
-    return
-
     if is_open_def(model, targets_rels):
         print("DEFINABLE")
     else:
