@@ -30,6 +30,9 @@ class TupleHistory:
         self.history = list(t)
         self.has_generated = False # TODO capaz si genero al arrancar
     
+    def __eq__(self, other):
+        return self.t == other.t and self.history == other.history
+    
     def step(self,op,ti):
         """
         Toma la operacion y la tupla de indices
@@ -44,6 +47,10 @@ class TupleHistory:
             self.history.append(x)
             self.has_generated = True
             return len(self.history)-1
+    def __hash__(self):
+        return hash((self.t,tuple(self.history)))
+    def __repr__(self):
+        return "TupleHistory(t=%s,h=%s)" % (self.t,self.history)
         
         
 
@@ -61,7 +68,7 @@ class IndicesTupleGenerator:
         """
         self.viejos = viejos
         if generator is None:
-            self.generator = []
+            self.generator = iter([])
         else:
             self.generator = generator
         self.nuevos = nuevos
@@ -77,20 +84,17 @@ class IndicesTupleGenerator:
         if self.forked:
             raise ValueError("This generator was forked!")
         while not self.finished:
-            for f,ti in self.generator:
-                print("hola")
-                print((f,ti))
-                #import ipdb;ipdb.set_trace()
-                yield (f, ti) # devuelve la operacion y la tupla de indices
-            print("fin")
-            
-            if self.nuevos:
-                self.generator = product(self.ops,product_forced(self.viejos,self.nuevos,self.arity))
-                self.viejos+=self.nuevos
-                self.nuevos=[] # todos se gastaron para hacer el nuevo generador
-                self.finished = False
-            else:
-                self.finished = True
+            try:
+                f,ti = next(self.generator)
+                return (f, ti) # devuelve la operacion y la tupla de indices
+            except StopIteration:
+                if self.nuevos:
+                    self.generator = product(self.ops,product_forced(self.viejos,self.nuevos,self.arity))
+                    self.viejos+=self.nuevos
+                    self.nuevos=[] # todos se gastaron para hacer el nuevo generador
+                    self.finished = False
+                else:
+                    self.finished = True
                 
     
     def hubo_nuevo(self):
@@ -105,7 +109,7 @@ class IndicesTupleGenerator:
         result=[]
         generators = tee(self.generator,quantity)
         for i in range(quantity):
-            result.append(IndicesTupleGenerator(self.ops,arity,generators[i],list(self.viejos),list(self.nuevos)))
+            result.append(IndicesTupleGenerator(self.ops,self.arity,generators[i],list(self.viejos),list(self.nuevos)))
         return result
     
     
@@ -133,10 +137,10 @@ class Block():
         return self.generator.finished
     
     def is_all_in_target(self):
-        return not self.tuples_out_targets
+        return len(self.tuples_out_target) == 0
     
     def is_disjunt_to_target(self):
-        return not self.tuples_in_targets
+        return len(self.tuples_in_target) == 0
     
     def formula(self):
         print("WARNING: formula not implemented")
@@ -148,22 +152,27 @@ class Block():
         Devuelve una lista de nuevos bloques
         """
         result = defaultdict(lambda : ([],[]))
-        print(self.finished())
-        op, ti = self.generator.step()
+        try:
+            op, ti = self.generator.step()
+        except TypeError:
+            # step devolvio none, asi que ya termino
+            assert self.generator.finished
+            return [self]
+        
         
         for th in self.tuples_in_target:
             result[th.step(op,ti)][0].append(th)
         for th in self.tuples_out_target:
             result[th.step(op,ti)][1].append(th)
         if len(result.keys()) == 1:
-            return [Self]
+            return [self]
         else:
             generators = self.generator.fork(len(result.keys()))
             results = []
-            for i,r in enumerate(result):
-                if r[0].has_generated: # TODO SI UNO GENERO EL OTRO TAMBIEN
+            for i,r in enumerate(result.values()):
+                if r[0][0].has_generated: # TODO SI r[0] GENERO r[1] TAMBIEN, tomo r[0][0] por agarrar la primer th
                     generators[i].hubo_nuevo()
-                results.app(Block(self.operations,r[0],r[1],self.target,generators[i]))
+                results.append(Block(self.operations,r[0],r[1],self.target,generators[i]))
             return results
             
 
@@ -174,7 +183,6 @@ def is_open_def_recursive(block):
     input: un bloque mixto
     output:
     """
-    print(block)
     if block.finished():
         # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
         return False
@@ -182,10 +190,13 @@ def is_open_def_recursive(block):
     blocks = block.step()
     formula = []
     for b in blocks:
+        print("bloque")
         if b.is_all_in_target():
+            print("esta todo en T")
             formula.append(b.formula())
             continue
         if b.is_disjunt_to_target():
+            print("nada esta en T")
             continue
         recursive_call = is_open_def_recursive(b)
         if not recursive_call:
@@ -196,8 +207,11 @@ def is_open_def(A,Tgs):
     assert len(Tgs)==1
     assert not A.relations
     T=Tgs[0]
-    tuples_in = set(T.r)
-    tuples_out = set(product(A.universe,repeat=T.arity)) - tuples_in
+    tuples_in = set(TupleHistory(t) for t in T.r)
+    tuples_out = set(TupleHistory(t) for t in product(A.universe,repeat=T.arity)) - tuples_in
+    assert len(tuples_in) + len(tuples_out) == len(A.universe)**T.arity, "%s != %s" % (len(tuples_in) + len(tuples_out),len(A.universe)**T.arity)
+    print(tuples_in)
+    print(tuples_out)
     start_block = Block(A.operations.values(),tuples_in,tuples_out,T)
     return is_open_def_recursive(start_block)
 
@@ -216,6 +230,10 @@ def main():
         print("ERROR: NO TARGET RELATIONS FOUND")
         return
     start_hit = time()
+
+
+    print(is_open_def(model, targets_rels))
+    return
 
     if is_open_def(model, targets_rels):
         print("DEFINABLE")
