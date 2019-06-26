@@ -188,7 +188,7 @@ def is_open_def_recursive(block):
         return False
     
     blocks = block.step()
-    formula = []
+    formula = [True]
     for b in blocks:
         print("bloque")
         if b.is_all_in_target():
