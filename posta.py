@@ -5,97 +5,161 @@
 Modulo para calcular HIT de una tupla en un modelo
 """
 import formulas
-from itertools import product
+from itertools import product, tee
 from collections import defaultdict
+from parser.parser import parser
+from time import time
+
+import sys
+
 from misc import indent
 from first_order.isomorphisms import Isomorphism
 
+def product_forced(not_forced_elems,forced_elems, repeat):
+    for j in range(repeat):
+        print([not_forced_elems]*(repeat-(j+1)) + [forced_elems] * (j+1))
+        for i in product(*([not_forced_elems]*(repeat-(j+1)) + [forced_elems] * (j+1))):
+            yield i
 
-class StepperTupleModelHash():
+class TupleHistory:
     """
-    Clase de HIT, toma un modelo ambiente y la tupla generadora
+    Clase de la tupla con su historia
+    Recibe una tupla de indices desde el generador y hace crecer la historia
     """
-
-    def __init__(self, model, arity, partition=[],alphabet=[], syntax=[], news=[]):
+    def __init__(self,t):
+        self.t=t
+        self.history = list(t)
+        self.has_generated = False # TODO capaz si genero al arrancar
+    
+    def step(self,op,ti):
         """
-        Calcula HIT de a pasos de una aridad en un modelo.
-        Si viene en th una tupla (T,H), se considera que son
-        los datos para un hit parcial ya calculado
+        Toma la operacion y la tupla de indices
+        Devuelve el indice devuelto
         """
-        self.arity = arity
-        self.model = model
+        x = op(*[self.history[i] for i in ti]) # resultado de la operacion
+        try:
+            xi = self.history.index(x) # indice en la historia
+            self.has_generated = False
+            return xi
+        except ValueError:
+            self.history.append(x)
+            self.has_generated = True
+            return len(self.history)-1
         
-        if not alphabet:
-            alphabet = [[],list(range(arity))]
-            syntax = [(None,i) for i in range(arity)]
+        
 
-        self.ops = defaultdict(set)
-        for op in model.operations:
-            self.ops[model.operations[op].arity].add(model.operations[op])
+class IndicesTupleGenerator:
+    """
+    Clase de HIT pero de indices, toma un modelo ambiente y la tupla generadora
+    """
+    def __init__(self, operations,arity, generator, viejos, nuevos):
+        """
+        Devuelve tuplas para hacer HIT parcial de indices
+        En operaciones estan las operaciones del modelo de la aridad arity
+        generator es el generador de tuplas heredado, si se tiene que volver a calcular viene None
+        viejos son los elementos viejos
+        nuevos son los elementos que se estan generando ahora
+        """
+        self.viejos = viejos
+        if generator is None:
+            self.generator = []
+        else:
+            self.generator = generator
+        self.nuevos = nuevos
+        self.arity = arity
+        self.ops = sorted(operations, key=lambda f: f.sym)
+        
+        self.finished = False
+        self.forked = False
+        
+        assert type(self.ops)==list
 
-
-        self.H = [generator_tuple]
-        i = len(generator_tuple)-1
-        self.T = defaultdict(set, {a: {j}
-                                   for j, a in enumerate(generator_tuple)})
-        O = self.H[-1]
-    def next_in_language(self,language,element):
-        return language[language.index(element) + 1]
     def step(self):
-        while O:
-            flath = [item for sublist in self.H for item in sublist]
-            self.H.append([])
-            for ar in sorted(self.ops):
-                for f in sorted(self.ops[ar], key=lambda f: f.sym):
-                    for tup in product(flath, repeat=ar):
-                        if any(t in O for t in tup):
-                            i += 1
-                            x = f(*tup)
-                            self.T[x].add(i)
-                            if self.debug:
-                                self.V.append(x)
-                            if all(x not in h for h in self.H):
-                                self.H[-1].append(x)
-            O = self.H[-1]
-        self.T = {k: frozenset(self.T[k]) for k in self.T}
-        self.H.pop(-1)
-
-    def __eq__(self, other):
-        return set(self.T.values()) == set(other.T.values()) and self.R == other.R
-
-    def __hash__(self):
-        return hash(frozenset(self.T.values()))
-
-    def iso(self, other):
-        if self == other:
-            flat_h_self = [item for sublist in self.H for item in sublist]
-            flat_h_other = [item for sublist in other.H for item in sublist]
-            d = {(flat_h_self[i]): flat_h_other[i]
-                 for i in range(len(flat_h_self))}
-            return Isomorphism(d, self.model.restrict(self.universe()),
-                               other.model.restrict(other.universe()), None)
-        return None
-
-    def tuple(self):
-        return self.generator_tuple
-
-    def universe(self):
-        return {item for sublist in self.H for item in sublist}
-
-    def structure(self):
-        return self.model.restrict(self.universe())
-
-    def __repr__(self):
-        result = "TupleModelHash(\n"
-        result += indent("Tuple=%s,\n" % self.generator_tuple)
-        result += indent("History=%s,\n" % self.H)
-        result += indent("Type=%s,\n" % {k: sorted(self.T[k]) for k in self.T})
-        result += indent("Relations=%s,\n" % self.R)
-        if self.debug:
-            result += indent("V=%s,\n" % self.V)
-        result += ")"
+        if self.forked:
+            raise ValueError("This generator was forked!")
+        while not self.finished:
+            for f,ti in self.generator:
+                yield (f, ti) # devuelve la operacion y la tupla de indices
+            
+            if self.nuevos:
+                self.generator = product(self.ops,product_forced(self.viejos,self.nuevos,arity))
+                self.viejos+=self.nuevos
+                self.nuevos=[] # todos se gastaron para hacer el nuevo generador
+                self.finished = False
+            else:
+                self.finished = True
+    
+    def hubo_nuevo(self):
+        if self.forked:
+            raise ValueError("This generator was forked!")
+        self.nuevos.append(len(self.viejos)+len(self.nuevos))
+    
+    def fork(self,quantity):
+        if self.forked:
+            raise ValueError("This generator was forked!")
+        self.forked = True
+        result=[]
+        generators = tee(self.generator,quantity)
+        for i in range(quantity):
+            result.append(IndicesTupleGenerator(self.ops,arity,generators[i],list(self.viejos),list(self.nuevos)))
         return result
-
+    
+    
+class Block():
+    """
+    Clase del bloque que va llevando el mismo hit
+    """
+    def __init__(self,operations,tuples_in_target,tuples_out_target,target,generator = None):
+        """
+        :param tuples_in_targets: tuplas en el target
+        :param tuples_out_targets: tuplas fuera del target
+        :param targets: relacion target
+        """
+        self.target = target
+        self.operations = operations
+        self.tuples_in_target = tuples_in_target
+        self.tuples_out_target = tuples_out_target
+        self.arity = target.arity
+        if generator is None:
+            self.generator = IndicesTupleGenerator(self.operations,self.arity,None,[],list(range(self.arity)))
+        else:
+            self.generator = generator
+    
+    def finished(self):
+        return self.generator.finished
+    
+    def is_all_in_target(self):
+        return not self.tuples_out_targets
+    
+    def is_disjunt_to_target(self):
+        return not self.tuples_in_targets
+    
+    def formula(self):
+        print("WARNING: formula not implemented")
+        return []
+        
+    def step(self):
+        """
+        Hace un paso en hit a todas las tuplas
+        Devuelve una lista de nuevos bloques
+        """
+        result = defaultdict(lambda : ([],[]))
+        op,ti =self.generator.step()
+        for th in self.tuples_in_target:
+            result[th.step(op,ti)][0].append(th)
+        for th in self.tuples_out_target:
+            result[th.step(op,ti)][1].append(th)
+        if len(result.keys()) == 1:
+            return [Self]
+        else:
+            generators = self.generator.fork(len(result.keys()))
+            results = []
+            for i,r in enumerate(result):
+                if r[0].has_generated: # TODO SI UNO GENERO EL OTRO TAMBIEN
+                    generators[i].hubo_nuevo()
+                results.app(Block(self.operations,r[0],r[1],self.target,generators[i]))
+            return results
+            
 
 def is_open_def_recursive(block):
     """
@@ -111,29 +175,49 @@ def is_open_def_recursive(block):
     
     blocks = block.step()
     formula = []
-    recursive_blocks = []
     for b in blocks:
         if b.is_all_in_target():
-            formula.append(b.formula)
+            formula.append(b.formula())
             continue
         if b.is_disjunt_to_target():
             continue
         recursive_call = is_open_def_recursive(b)
         if not recursive_call:
             return False
+    return formula
 
+def is_open_def(A,Tgs):
+    assert len(Tgs)==1
+    assert not A.relations
+    T=Tgs[0]
+    tuples_in = set(T.r)
+    tuples_out = set(product(A.universe,repeat=T.arity)) - tuples_in
+    start_block = Block(A.operations.values(),tuples_in,tuples_out,T)
+
+
+def main():
+    try:
+        model = parser(sys.argv[1], preprocess=False)
+    except IndexError:
+        model = parser()
+    print("*" * 20)
+    targets_rels = tuple(model.relations[sym] for sym in model.relations.keys() if sym[0] == "T")
+    for t in targets_rels:
+        del model.relations[t.sym]
+    
+    if not targets_rels:
+        print("ERROR: NO TARGET RELATIONS FOUND")
+        return
+    start_hit = time()
+
+    if is_open_def(model, targets_rels):
+        print("DEFINABLE")
+    else:
+        print("NOT DEFINABLE")
+        print("Counterexample: ")
+    time_hit = time() - start_hit
+    print("Elapsed time: %s" % time_hit)
+    
+    
 if __name__ == "__main__":
-    """
-    Para testeo
-    """
-
-    from parser.parser import parser
-    MODEL = parser("./model_examples/posetrombo.model", preprocess=True)
-    # print(MODEL)
-    TA = [0, 3]
-    TB = [1, 2]
-    FA = TupleModelHash(MODEL, TA)
-    FB = TupleModelHash(MODEL, TB)
-    print(FA)
-    print(FB)
-    print(FA == FB)
+    main()
