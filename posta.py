@@ -17,7 +17,6 @@ from first_order.isomorphisms import Isomorphism
 
 def product_forced(not_forced_elems,forced_elems, repeat):
     for j in range(repeat):
-        print([not_forced_elems]*(repeat-(j+1)) + [forced_elems] * (j+1))
         for i in product(*([not_forced_elems]*(repeat-(j+1)) + [forced_elems] * (j+1))):
             yield i
 
@@ -79,15 +78,20 @@ class IndicesTupleGenerator:
             raise ValueError("This generator was forked!")
         while not self.finished:
             for f,ti in self.generator:
+                print("hola")
+                print((f,ti))
+                #import ipdb;ipdb.set_trace()
                 yield (f, ti) # devuelve la operacion y la tupla de indices
+            print("fin")
             
             if self.nuevos:
-                self.generator = product(self.ops,product_forced(self.viejos,self.nuevos,arity))
+                self.generator = product(self.ops,product_forced(self.viejos,self.nuevos,self.arity))
                 self.viejos+=self.nuevos
                 self.nuevos=[] # todos se gastaron para hacer el nuevo generador
                 self.finished = False
             else:
                 self.finished = True
+                
     
     def hubo_nuevo(self):
         if self.forked:
@@ -144,7 +148,9 @@ class Block():
         Devuelve una lista de nuevos bloques
         """
         result = defaultdict(lambda : ([],[]))
-        op,ti =self.generator.step()
+        print(self.finished())
+        op, ti = self.generator.step()
+        
         for th in self.tuples_in_target:
             result[th.step(op,ti)][0].append(th)
         for th in self.tuples_out_target:
@@ -168,7 +174,7 @@ def is_open_def_recursive(block):
     input: un bloque mixto
     output:
     """
-    
+    print(block)
     if block.finished():
         # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
         return False
@@ -193,6 +199,7 @@ def is_open_def(A,Tgs):
     tuples_in = set(T.r)
     tuples_out = set(product(A.universe,repeat=T.arity)) - tuples_in
     start_block = Block(A.operations.values(),tuples_in,tuples_out,T)
+    return is_open_def_recursive(start_block)
 
 
 def main():
