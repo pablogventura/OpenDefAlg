@@ -170,7 +170,7 @@ class Block():
             generators = self.generator.fork(len(result.keys()))
             results = []
             for i,r in enumerate(result.values()):
-                if r[0][0].has_generated: # TODO SI r[0] GENERO r[1] TAMBIEN, tomo r[0][0] por agarrar la primer th
+                if (r[0] and r[0][0].has_generated) or (r[1] and r[1][0].has_generated): # TODO tomo r[0][0] por agarrar la primer th
                     generators[i].hubo_nuevo()
                 results.append(Block(self.operations,r[0],r[1],self.target,generators[i]))
             return results
