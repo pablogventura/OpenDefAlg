@@ -209,9 +209,7 @@ def is_open_def(A,Tgs):
     T=Tgs[0]
     tuples_in = set(TupleHistory(t) for t in T.r)
     tuples_out = set(TupleHistory(t) for t in product(A.universe,repeat=T.arity)) - tuples_in
-    assert len(tuples_in) + len(tuples_out) == len(A.universe)**T.arity, "%s != %s" % (len(tuples_in) + len(tuples_out),len(A.universe)**T.arity)
-    print(tuples_in)
-    print(tuples_out)
+
     start_block = Block(A.operations.values(),tuples_in,tuples_out,T)
     return is_open_def_recursive(start_block)
 
