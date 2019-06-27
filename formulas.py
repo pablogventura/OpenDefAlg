@@ -370,7 +370,7 @@ def variables(*lvars):
     """
     Declara variables de primer orden
     """
-    return tuple(Variable(x) for x in lvars)
+    return [Variable(x) for x in lvars]
 
 def forall(var, formula):
     """

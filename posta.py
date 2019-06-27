@@ -12,9 +12,6 @@ from time import time
 
 import sys
 
-from misc import indent
-from first_order.isomorphisms import Isomorphism
-
 def product_forced(not_forced_elems,forced_elems, repeat):
     for j in range(repeat):
         for i in product(*([not_forced_elems]*(repeat-(j+1)) + [forced_elems] * (j+1))):
@@ -58,7 +55,7 @@ class IndicesTupleGenerator:
     """
     Clase de HIT pero de indices, toma un modelo ambiente y la tupla generadora
     """
-    def __init__(self, operations,arity, generator, viejos, nuevos):
+    def __init__(self, operations,arity, generator, viejos, nuevos, sintactico = []):
         """
         Devuelve tuplas para hacer HIT parcial de indices
         En operaciones estan las operaciones del modelo de la aridad arity
@@ -66,6 +63,7 @@ class IndicesTupleGenerator:
         viejos son los elementos viejos
         nuevos son los elementos que se estan generando ahora
         """
+        self.sintactico = sintactico
         self.viejos = viejos
         if generator is None:
             self.generator = iter([])
@@ -86,6 +84,9 @@ class IndicesTupleGenerator:
         while not self.finished:
             try:
                 f,ti = next(self.generator)
+                fsym = formulas.OpSym(f.sym,f.arity)
+                term = fsym(*[self.sintactico[i] for i in ti])
+                self.sintactico.append(term)
                 return (f, ti) # devuelve la operacion y la tupla de indices
             except StopIteration:
                 if self.nuevos:
@@ -109,7 +110,7 @@ class IndicesTupleGenerator:
         result=[]
         generators = tee(self.generator,quantity)
         for i in range(quantity):
-            result.append(IndicesTupleGenerator(self.ops,self.arity,generators[i],list(self.viejos),list(self.nuevos)))
+            result.append(IndicesTupleGenerator(self.ops,self.arity,generators[i],list(self.viejos),list(self.nuevos),self.sintactico))
         return result
     
     
@@ -129,7 +130,7 @@ class Block():
         self.tuples_out_target = tuples_out_target
         self.arity = target.arity
         if generator is None:
-            self.generator = IndicesTupleGenerator(self.operations,self.arity,None,[],list(range(self.arity)))
+            self.generator = IndicesTupleGenerator(self.operations,self.arity,None,[],list(range(self.arity)),formulas.variables(*range(self.arity)))
         else:
             self.generator = generator
     
