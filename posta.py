@@ -12,6 +12,10 @@ from time import time
 
 import sys
 
+class Counterexample(Exception):
+    def __init__(self, a,b):
+        super(Counterexample, self).__init__("Tuples %s and %s have the same type, but polarities differ" % (a,b))
+
 def product_forced(not_forced_elems,forced_elems, repeat):
     for j in range(repeat):
         for i in product(*([not_forced_elems]*(repeat-(j+1)) + [forced_elems] * (j+1))):
@@ -197,6 +201,7 @@ def is_open_def_recursive(block):
     """
 
     if block.finished():
+        raise Counterexample(block.tuples_in_target[0].t,block.tuples_out_target[0].t)
         # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
         return False
     if block.is_all_in_target():
@@ -208,10 +213,7 @@ def is_open_def_recursive(block):
     formula = formulas.false()
     for b in blocks:
         recursive_call = is_open_def_recursive(b)
-        if recursive_call is False:
-            return False
-        else:
-            formula = formula | recursive_call
+        formula = formula | recursive_call
 
     return formula
 
@@ -241,14 +243,13 @@ def main():
         return
     start_hit = time()
 
-
-    f = is_open_def(model, targets_rels)
-    if f is not False:
+    try:
+        f = is_open_def(model, targets_rels)
         print("DEFINABLE")
-        print("Formula: T := %s" % f)
-    else:
+        print("\tT := %s" % f)
+    except Counterexample as e:
         print("NOT DEFINABLE")
-        print("Counterexample: ")
+        print("\tCounterexample: %s" % e)
     time_hit = time() - start_hit
     print("Elapsed time: %s" % time_hit)
     
