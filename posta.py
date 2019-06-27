@@ -203,7 +203,6 @@ def is_open_def_recursive(block):
     if block.finished():
         raise Counterexample(block.tuples_in_target[0].t,block.tuples_out_target[0].t)
         # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
-        return False
     if block.is_all_in_target():
         return block.formula
     if block.is_disjunt_to_target():
