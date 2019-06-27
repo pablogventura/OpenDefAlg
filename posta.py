@@ -96,7 +96,11 @@ class IndicesTupleGenerator:
                     self.finished = False
                 else:
                     self.finished = True
-                
+    
+    def formula_diferenciadora(self, index):
+        """Asumo que acaban de diferenciarse"""
+        print("ff %s" % formulas.eq(self.sintactico[-1],self.sintactico[index]))
+        return formulas.eq(self.sintactico[-1],self.sintactico[index])
     
     def hubo_nuevo(self):
         if self.forked:
@@ -118,7 +122,7 @@ class Block():
     """
     Clase del bloque que va llevando el mismo hit
     """
-    def __init__(self,operations,tuples_in_target,tuples_out_target,target,generator = None):
+    def __init__(self,operations,tuples_in_target,tuples_out_target,target,generator = None, formula=None):
         """
         :param tuples_in_targets: tuplas en el target
         :param tuples_out_targets: tuplas fuera del target
@@ -129,6 +133,10 @@ class Block():
         self.tuples_in_target = tuples_in_target
         self.tuples_out_target = tuples_out_target
         self.arity = target.arity
+        if formula is None:
+            self.formula = formulas.true()
+        else:
+            self.formula = formula
         if generator is None:
             self.generator = IndicesTupleGenerator(self.operations,self.arity,None,[],list(range(self.arity)),formulas.variables(*range(self.arity)))
         else:
@@ -142,10 +150,6 @@ class Block():
     
     def is_disjunt_to_target(self):
         return len(self.tuples_in_target) == 0
-    
-    def formula(self):
-        print("WARNING: formula not implemented")
-        return []
         
     def step(self):
         """
@@ -170,10 +174,13 @@ class Block():
         else:
             generators = self.generator.fork(len(result.keys()))
             results = []
-            for i,r in enumerate(result.values()):
+            for i,index in enumerate(result.keys()):
+                r = result[index]
                 if (r[0] and r[0][0].has_generated) or (r[1] and r[1][0].has_generated): # TODO tomo r[0][0] por agarrar la primer th
                     generators[i].hubo_nuevo()
-                results.append(Block(self.operations,r[0],r[1],self.target,generators[i]))
+                
+                f = self.formula & generators[i].formula_diferenciadora(index)
+                results.append(Block(self.operations,r[0],r[1],self.target,generators[i],f))
             return results
             
 
@@ -189,12 +196,14 @@ def is_open_def_recursive(block):
         return False
     
     blocks = block.step()
-    formula = [True]
+    f = formulas.false()
+    assert len(blocks) > 0
     for b in blocks:
+        print(f)
         print("bloque")
         if b.is_all_in_target():
             print("esta todo en T")
-            formula.append(b.formula())
+            f = f | b.formula # or entre formulas
             continue
         if b.is_disjunt_to_target():
             print("nada esta en T")
@@ -202,7 +211,8 @@ def is_open_def_recursive(block):
         recursive_call = is_open_def_recursive(b)
         if not recursive_call:
             return False
-    return formula
+    #assert f != formulas.false()
+    return f
 
 def is_open_def(A,Tgs):
     assert len(Tgs)==1
@@ -231,8 +241,10 @@ def main():
     start_hit = time()
 
 
-    if is_open_def(model, targets_rels):
+    f = is_open_def(model, targets_rels)
+    if f is not False:
         print("DEFINABLE")
+        print("Formula:%s" % f)
     else:
         print("NOT DEFINABLE")
         print("Counterexample: ")
