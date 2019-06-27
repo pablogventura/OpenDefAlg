@@ -99,7 +99,6 @@ class IndicesTupleGenerator:
     
     def formula_diferenciadora(self, index):
         """Asumo que acaban de diferenciarse"""
-        print("ff %s" % formulas.eq(self.sintactico[-1],self.sintactico[index]))
         return formulas.eq(self.sintactico[-1],self.sintactico[index])
     
     def hubo_nuevo(self):
@@ -178,8 +177,13 @@ class Block():
                 r = result[index]
                 if (r[0] and r[0][0].has_generated) or (r[1] and r[1][0].has_generated): # TODO tomo r[0][0] por agarrar la primer th
                     generators[i].hubo_nuevo()
-                
-                f = self.formula & generators[i].formula_diferenciadora(index)
+                    f = self.formula & -generators[i].formula_diferenciadora(index) # formula valida
+                else:
+                    f = self.formula & generators[i].formula_diferenciadora(index)  # formula valida
+                for j in range(len(result)):
+                    if j == index:
+                        continue
+                    f = f & -generators[i].formula_diferenciadora(j) # formula no valida
                 results.append(Block(self.operations,r[0],r[1],self.target,generators[i],f))
             return results
             
@@ -191,28 +195,25 @@ def is_open_def_recursive(block):
     input: un bloque mixto
     output:
     """
+
     if block.finished():
         # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
         return False
-    
+    if block.is_all_in_target():
+        return block.formula
+    if block.is_disjunt_to_target():
+        return formulas.false()
+
     blocks = block.step()
-    f = formulas.false()
-    assert len(blocks) > 0
+    formula = formulas.false()
     for b in blocks:
-        print(f)
-        print("bloque")
-        if b.is_all_in_target():
-            print("esta todo en T")
-            f = f | b.formula # or entre formulas
-            continue
-        if b.is_disjunt_to_target():
-            print("nada esta en T")
-            continue
         recursive_call = is_open_def_recursive(b)
-        if not recursive_call:
+        if recursive_call is False:
             return False
-    #assert f != formulas.false()
-    return f
+        else:
+            formula = formula | recursive_call
+
+    return formula
 
 def is_open_def(A,Tgs):
     assert len(Tgs)==1
@@ -244,7 +245,7 @@ def main():
     f = is_open_def(model, targets_rels)
     if f is not False:
         print("DEFINABLE")
-        print("Formula:%s" % f)
+        print("Formula: T := %s" % f)
     else:
         print("NOT DEFINABLE")
         print("Counterexample: ")

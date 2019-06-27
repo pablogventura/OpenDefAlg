@@ -189,7 +189,6 @@ class BinaryOpFormula(Formula):
     """
     def __init__(self, subformulas):
         self.subformulas = subformulas
-        print(subformulas)
 
     def free_vars(self):
         result = set()
@@ -356,9 +355,7 @@ class FalseFormula(Formula):
     """
     Formula de primer orden constantemente falsa
     """
-    def __init__(self):
-        Formula.__init__(self)
-        print("se creo una formula falsa")
+
     def __repr__(self):
         return "⊥"
 
