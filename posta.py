@@ -59,7 +59,7 @@ class IndicesTupleGenerator:
     """
     Clase de HIT pero de indices, toma un modelo ambiente y la tupla generadora
     """
-    def __init__(self, operations,arity, generator, viejos, nuevos, sintactico = []):
+    def __init__(self, operations,arity, generator, viejos, nuevos, sintactico = [], last_term=None):
         """
         Devuelve tuplas para hacer HIT parcial de indices
         En operaciones estan las operaciones del modelo de la aridad arity
@@ -79,9 +79,10 @@ class IndicesTupleGenerator:
         
         self.finished = False
         self.forked = False
+        self.last_term = last_term # ultima term
         
         assert type(self.ops)==list
-
+    
     def step(self):
         if self.forked:
             raise ValueError("This generator was forked!")
@@ -89,9 +90,11 @@ class IndicesTupleGenerator:
             try:
                 f,ti = next(self.generator)
                 fsym = formulas.OpSym(f.sym,f.arity)
-                term = fsym(*[self.sintactico[i] for i in ti])
-                self.sintactico.append(term)
+                
+                self.last_term = fsym(*[self.sintactico[i] for i in ti])
+                
                 return (f, ti) # devuelve la operacion y la tupla de indices
+            
             except StopIteration:
                 if self.nuevos:
                     self.generator = product(self.ops,product_forced(self.viejos,self.nuevos,self.arity))
@@ -109,6 +112,7 @@ class IndicesTupleGenerator:
         if self.forked:
             raise ValueError("This generator was forked!")
         self.nuevos.append(len(self.viejos)+len(self.nuevos))
+        self.sintactico.append(self.last_term)
     
     def fork(self,quantity):
         if self.forked:
@@ -117,7 +121,7 @@ class IndicesTupleGenerator:
         result=[]
         generators = tee(self.generator,quantity)
         for i in range(quantity):
-            result.append(IndicesTupleGenerator(self.ops,self.arity,generators[i],list(self.viejos),list(self.nuevos),self.sintactico))
+            result.append(IndicesTupleGenerator(self.ops,self.arity,generators[i],list(self.viejos),list(self.nuevos),self.sintactico, self.last_term))
         return result
     
     
@@ -184,7 +188,7 @@ class Block():
                     f = self.formula & -generators[i].formula_diferenciadora(index) # formula valida
                 else:
                     f = self.formula & generators[i].formula_diferenciadora(index)  # formula valida
-                for j in range(len(result)):
+                for j in range(len(self.generator.sintactico)):
                     if j == index:
                         continue
                     f = f & -generators[i].formula_diferenciadora(j) # formula no valida

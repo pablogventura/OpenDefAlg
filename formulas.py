@@ -283,7 +283,7 @@ class EqFormula(Formula):
     """
     def __init__(self, t1, t2):
         if not (isinstance(t1, Term) and isinstance(t2, Term)):
-            raise ValueError("Must be terms")
+            raise ValueError("Must be terms:%s %s" % (t1,t2))
 
         self.t1=t1
         self.t2=t2
