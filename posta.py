@@ -17,6 +17,7 @@ class Counterexample(Exception):
         super(Counterexample, self).__init__("Tuples %s and %s have the same type, but polarities differ" % (a,b))
 
 def product_forced(not_forced_elems,forced_elems, repeat):
+    # TODO usar combinations
     for j in range(repeat):
         for i in product(*([not_forced_elems]*(repeat-(j+1)) + [forced_elems] * (j+1))):
             yield i
