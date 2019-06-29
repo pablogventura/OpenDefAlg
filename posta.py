@@ -27,8 +27,6 @@ def permutations_forced(not_forced_elems,forced_elems, repeat):
             yield t
 
 
-
-
 class TupleHistory:
     """
     Clase de la tupla con su historia
@@ -137,17 +135,16 @@ class Block():
     """
     Clase del bloque que va llevando el mismo hit
     """
-    def __init__(self,operations,tuples_in_target,tuples_out_target,target,generator = None, formula=None):
+    def __init__(self,operations,tuples,targets,generator = None, formula=None):
         """
         :param tuples_in_targets: tuplas en el target
         :param tuples_out_targets: tuplas fuera del target
         :param targets: relacion target
         """
-        self.target = target
+        self.targets = targets
         self.operations = operations
-        self.tuples_in_target = tuples_in_target
-        self.tuples_out_target = tuples_out_target
-        self.arity = target.arity
+        self.tuples = tuples
+        self.arity = targets[0].arity
         if formula is None:
             self.formula = formulas.true()
         else:
@@ -160,6 +157,9 @@ class Block():
     def finished(self):
         return self.generator.finished
     
+    def update_quarks(self):
+        for polarity in self.tuples:
+            ifself.tuples[polarity]
     def is_all_in_target(self):
         return len(self.tuples_out_target) == 0
     
@@ -231,31 +231,37 @@ def is_open_def_recursive(block):
 def is_open_def(A,Tgs):
     assert len(Tgs)==1
     assert not A.relations
-    T=Tgs[0]
-    tuples_in = set(TupleHistory(t) for t in T.r)
-    tuples_out = set(TupleHistory(t) for t in product(A.universe,repeat=T.arity)) - tuples_in
+    
+    tuples = defaultdict(list)
+    for t in product(A.universe,repeat=Tgs[0].arity):
+        key = tuple(target(t) for target in Tgs)
+        tuples[key].append(t)
 
-    start_block = Block(A.operations.values(),tuples_in,tuples_out,T)
+    start_block = Block(A.operations.values(),tuples,Tgs)
     return is_open_def_recursive(start_block)
 
 
 def main():
     try:
-        model = parser(sys.argv[1], preprocess=False)
+        model = parser(sys.argv[1], preprocess=True)
     except IndexError:
         model = parser()
     print("*" * 20)
-    targets_rels = tuple(model.relations[sym] for sym in model.relations.keys() if sym[0] == "T")
-    for t in targets_rels:
-        del model.relations[t.sym]
+    t_rels = tuple(model.relations[sym] for sym in model.relations.keys() if sym[0] == "T")
     
-    if not targets_rels:
+    if not t_rels:
         print("ERROR: NO TARGET RELATIONS FOUND")
         return
+    
+    targets_rels = defaultdict(list)
+    for t in t_rels:
+        del model.relations[t.sym]
+        targets_rels[t.arity].append(t)
+    
     start_hit = time()
 
     try:
-        f = is_open_def(model, targets_rels)
+        f = is_open_def(model, targets_rels[2]) # TODO SOLO LAS BINARIAS
         print("DEFINABLE")
         print("\tT := %s" % f)
     except Counterexample as e:
