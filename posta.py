@@ -5,7 +5,7 @@
 Modulo para calcular HIT de una tupla en un modelo
 """
 import formulas
-from itertools import product, tee
+from itertools import product, tee, permutations
 from collections import defaultdict
 from parser.parser import parser
 from time import time
@@ -17,10 +17,10 @@ class Counterexample(Exception):
         super(Counterexample, self).__init__("Tuples %s and %s have the same type, but polarities differ" % (a,b))
 
 def product_forced(not_forced_elems,forced_elems, repeat):
-    # TODO usar combinations
     for j in range(repeat):
-        for i in product(*([not_forced_elems]*(repeat-(j+1)) + [forced_elems] * (j+1))):
-            yield i
+        for sets in permutations(([not_forced_elems] * (repeat - (j + 1)) + [forced_elems] * (j + 1)),repeat):
+            for i in product(*sets):
+                yield i 
 
 class TupleHistory:
     """
