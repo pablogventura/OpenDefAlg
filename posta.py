@@ -16,11 +16,18 @@ class Counterexample(Exception):
     def __init__(self, a,b):
         super(Counterexample, self).__init__("Tuples %s and %s have the same type, but polarities differ" % (a,b))
 
-def product_forced(not_forced_elems,forced_elems, repeat):
-    for j in range(repeat):
-        for sets in permutations(([not_forced_elems] * (repeat - (j + 1)) + [forced_elems] * (j + 1)),repeat):
-            for i in product(*sets):
-                yield i 
+def permutations_forced(not_forced_elems,forced_elems, repeat):
+    # for j in range(repeat):
+    #     for sets in permutations(([not_forced_elems] * (repeat - (j + 1)) + [forced_elems] * (j + 1)),repeat):
+    #         for i in product(*sets):
+    #             yield i
+    #TODO MEJORAR ESTO PARA NO FILTRAR
+    for t in permutations(not_forced_elems+forced_elems,r=repeat):
+        if any(e in forced_elems for e in t):
+            yield t
+
+
+
 
 class TupleHistory:
     """
@@ -98,7 +105,7 @@ class IndicesTupleGenerator:
             
             except StopIteration:
                 if self.nuevos:
-                    self.generator = product(self.ops,product_forced(self.viejos,self.nuevos,self.arity))
+                    self.generator = product(self.ops,permutations_forced(self.viejos,self.nuevos,self.arity))
                     self.viejos+=self.nuevos
                     self.nuevos=[] # todos se gastaron para hacer el nuevo generador
                     self.finished = False
