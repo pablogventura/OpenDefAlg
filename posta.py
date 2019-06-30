@@ -135,7 +135,7 @@ class Block():
     """
     Clase del bloque que va llevando el mismo hit
     """
-    def __init__(self,operations,tuples,targets,generator = None, formula=None):
+    def __init__(self,operations,tuples,targets,generator = None, forms=None):
         """
         :param tuples_in_targets: tuplas en el target
         :param tuples_out_targets: tuplas fuera del target
@@ -145,10 +145,10 @@ class Block():
         self.operations = operations
         self.tuples = tuples
         self.arity = targets[0].arity
-        if formula is None:
-            self.formula = formulas.true()
+        if forms is None:
+            self.form = [formulas.true()]*len(self.targets)
         else:
-            self.formula = formula
+            self.form = forms
         if generator is None:
             self.generator = IndicesTupleGenerator(self.operations,self.arity,None,[],list(range(self.arity)),formulas.variables(*range(self.arity)))
         else:
@@ -158,8 +158,27 @@ class Block():
         return self.generator.finished
     
     def update_quarks(self):
-        for polarity in self.tuples:
-            ifself.tuples[polarity]
+        for p in list(self.tuples.keys()): # TODO CUANDO SE BORRAN LOS QUARKS VACIOS?
+            if len(self.tuples[p])== 0:
+                del tuples[p] # BORRO EL QUARK
+        polarities = np.asarray(list(self.tuples.keys()))
+        
+        for ti in range(len(self.targets)):
+            if polarities[:,ti][0] == None:
+                # es una target que ya termino
+                continue
+            if any(polarities[:,ti]):
+                if all(polarities[:,ti]):
+                    # es llena para ti
+                    self.forms[ti] = self.formula
+                else:
+                    # es mixta para ti
+                    continue
+            # es vacia o llena para ti
+            polarities[:,ti][0] = [None] * len(polarities)
+                
+                
+        
     def is_all_in_target(self):
         return len(self.tuples_out_target) == 0
     
