@@ -9,13 +9,13 @@ from itertools import product, tee, permutations
 from collections import defaultdict
 from parser.parser import parser
 from time import time
-
+from misc import indent
 import sys
 
 
 class Counterexample(Exception):
-    def __init__(self, a, b):
-        super(Counterexample, self).__init__("Tuples %s and %s have the same type, but polarities differ" % (a, b))
+    def __init__(self, a):
+        super(Counterexample, self).__init__(repr(a))
 
 
 def permutations_forced(not_forced_elems, forced_elems, repeat):
@@ -35,9 +35,10 @@ class TupleHistory:
     Recibe una tupla de indices desde el generador y hace crecer la historia
     """
     
-    def __init__(self, t):
+    def __init__(self, t, targets):
         self.t = t
         self.history = list(t)
+        self.polarity = tuple(tg(*t) for tg in targets)
         self.has_generated = False  # TODO capaz si genero al arrancar
     
     def __eq__(self, other):
@@ -62,7 +63,7 @@ class TupleHistory:
         return hash((self.t, tuple(self.history)))
     
     def __repr__(self):
-        return "TupleHistory(t=%s,h=%s)" % (self.t, self.history)
+        return "TupleHistory(t=%s,h=%s,p=%s)" % (self.t, self.history,self.polarity)
 
 
 class IndicesTupleGenerator:
@@ -143,17 +144,16 @@ class Block():
     Clase del bloque que va llevando el mismo hit
     """
     
-    def __init__(self, operations, tuples_in_target, tuples_out_target, target, generator=None, formula=None):
+    def __init__(self, operations, tuples, targets, generator=None, formula=None):
         """
         :param tuples_in_targets: tuplas en el target
         :param tuples_out_targets: tuplas fuera del target
         :param targets: relacion target
         """
-        self.target = target
+        self.targets = targets
         self.operations = operations
-        self.tuples_in_target = tuples_in_target
-        self.tuples_out_target = tuples_out_target
-        self.arity = target.arity
+        self.tuples = tuples
+        self.arity = targets[0].arity
         if formula is None:
             self.formula = formulas.true()
         else:
@@ -163,22 +163,23 @@ class Block():
                                                    formulas.variables(*range(self.arity)))
         else:
             self.generator = generator
+        
     
     def finished(self):
         return self.generator.finished
     
-    def is_all_in_target(self):
-        return len(self.tuples_out_target) == 0
+    def is_all_in_targets(self):
+        return all(tg or tg is None for th in self.tuples for tg in th.polarity)
     
-    def is_disjunt_to_target(self):
-        return len(self.tuples_in_target) == 0
+    def is_disjunt_to_targets(self):
+        return all((not tg) or tg is None for th in self.tuples for tg in th.polarity)
     
     def step(self):
         """
         Hace un paso en hit a todas las tuplas
         Devuelve una lista de nuevos bloques
         """
-        result = defaultdict(lambda: ([], []))
+        result = defaultdict(lambda : defaultdict(list))
         try:
             op, ti = self.generator.step()
         except TypeError:
@@ -186,30 +187,36 @@ class Block():
             assert self.generator.finished
             return [self]
         
-        for th in self.tuples_in_target:
-            result[th.step(op, ti)][0].append(th)
-        for th in self.tuples_out_target:
-            result[th.step(op, ti)][1].append(th)
+        for th in self.tuples:
+            result[th.step(op, ti)][th.polarity].append(th)
         if len(result.keys()) == 1:
             return [self]
         else:
             generators = self.generator.fork(len(result.keys()))
             results = []
             for i, index in enumerate(result.keys()):
-                r = result[index]
-                if (r[0] and r[0][0].has_generated) or (
-                        r[1] and r[1][0].has_generated):  # TODO tomo r[0][0] por agarrar la primer th
+                tuples_new_block = result[index]
+                if any(th[0].has_generated for th in tuples_new_block.values()):
+                    # TODO alguien genero dentro del bloque (todos generan)
+                    # en realidad bastaria con ver la primer tupla nomas
                     generators[i].hubo_nuevo()
-                    f = self.formula & -generators[i].formula_diferenciadora(index)  # formula valida
+                    #f = self.formula & -generators[i].formula_diferenciadora(index)  # formula valida
                 else:
-                    f = self.formula & generators[i].formula_diferenciadora(index)  # formula valida
+                    #f = self.formula & generators[i].formula_diferenciadora(index)  # formula valida
+                    pass
                 for j in range(len(self.generator.sintactico)):
                     if j == index:
                         continue
-                    f = f & -generators[i].formula_diferenciadora(j)  # formula no valida
-                results.append(Block(self.operations, r[0], r[1], self.target, generators[i], f))
+                    #f = f & -generators[i].formula_diferenciadora(j)  # formula no valida
+                tuples_new_block = [th for l in tuples_new_block.values() for th in l]
+                results.append(Block(self.operations, tuples_new_block, self.targets, generators[i], formulas.false()))
             return results
-
+    def __repr__(self):
+        result = "Block(\n"
+        for tuple in self.tuples:
+            result += indent(tuple) + "\n"
+        return result
+        
 
 def is_open_def_recursive(block):
     """
@@ -219,13 +226,17 @@ def is_open_def_recursive(block):
     output:
     """
     
-    if block.finished():
-        raise Counterexample(block.tuples_in_target[0].t, block.tuples_out_target[0].t)
-        # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
-    if block.is_all_in_target():
+    
+    if block.is_all_in_targets():
+        print("all targets")
         return block.formula
-    if block.is_disjunt_to_target():
+    elif block.is_disjunt_to_targets():
+        print("disjunt targets")
         return formulas.false()
+    
+    elif block.finished():
+        raise Counterexample(block.tuples)
+        # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
     
     blocks = block.step()
     formula = formulas.false()
@@ -236,27 +247,29 @@ def is_open_def_recursive(block):
     return formula
 
 
-def is_open_def(A, Tgs):
-    assert len(Tgs) == 1
-    assert not A.relations
-    T = Tgs[0]
-    tuples_in = set(TupleHistory(t) for t in T.r)
-    tuples_out = set(TupleHistory(t) for t in product(A.universe, repeat=T.arity)) - tuples_in
+def is_open_def(model, targets):
+    targets = sorted(targets,key=lambda tg:tg.sym)
+    assert len(set(tg.arity for tg in targets)) == 1
+    assert not model.relations
     
-    start_block = Block(A.operations.values(), tuples_in, tuples_out, T)
+    tuples = set(TupleHistory(t,targets) for t in product(model.universe, repeat=targets[0].arity))
+
+    start_block = Block(model.operations.values(), tuples, targets)
     return is_open_def_recursive(start_block)
 
 
 def main():
     try:
-        model = parser(sys.argv[1], preprocess=False)
+        model = parser(sys.argv[1], preprocess=True)
     except IndexError:
         model = parser()
     print("*" * 20)
     targets_rels = tuple(model.relations[sym] for sym in model.relations.keys() if sym[0] == "T")
+    targets = defaultdict(list)
     for t in targets_rels:
         del model.relations[t.sym]
-    
+        targets[t.arity].append(t)
+    targets_rels = targets[2]
     if not targets_rels:
         print("ERROR: NO TARGET RELATIONS FOUND")
         return
