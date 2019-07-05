@@ -63,7 +63,7 @@ class TupleHistory:
         return hash((self.t, tuple(self.history)))
     
     def __repr__(self):
-        return "TupleHistory(t=%s,h=%s,p=%s)" % (self.t, self.history,self.polarity)
+        return "TupleHistory(t=%s,h=%s,p=%s)" % (self.t, self.history, self.polarity)
 
 
 class IndicesTupleGenerator:
@@ -163,7 +163,6 @@ class Block():
                                                    formulas.variables(*range(self.arity)))
         else:
             self.generator = generator
-        
     
     def finished(self):
         return self.generator.finished
@@ -179,7 +178,7 @@ class Block():
         Hace un paso en hit a todas las tuplas
         Devuelve una lista de nuevos bloques
         """
-        result = defaultdict(lambda : defaultdict(list))
+        result = defaultdict(lambda: defaultdict(list))
         try:
             op, ti = self.generator.step()
         except TypeError:
@@ -200,23 +199,24 @@ class Block():
                     # TODO alguien genero dentro del bloque (todos generan)
                     # en realidad bastaria con ver la primer tupla nomas
                     generators[i].hubo_nuevo()
-                    #f = self.formula & -generators[i].formula_diferenciadora(index)  # formula valida
+                    # f = self.formula & -generators[i].formula_diferenciadora(index)  # formula valida
                 else:
-                    #f = self.formula & generators[i].formula_diferenciadora(index)  # formula valida
+                    # f = self.formula & generators[i].formula_diferenciadora(index)  # formula valida
                     pass
                 for j in range(len(self.generator.sintactico)):
                     if j == index:
                         continue
-                    #f = f & -generators[i].formula_diferenciadora(j)  # formula no valida
+                    # f = f & -generators[i].formula_diferenciadora(j)  # formula no valida
                 tuples_new_block = [th for l in tuples_new_block.values() for th in l]
                 results.append(Block(self.operations, tuples_new_block, self.targets, generators[i], formulas.false()))
             return results
+    
     def __repr__(self):
         result = "Block(\n"
         for tuple in self.tuples:
             result += indent(tuple) + "\n"
         return result
-        
+
 
 def is_open_def_recursive(block):
     """
@@ -225,7 +225,6 @@ def is_open_def_recursive(block):
     input: un bloque mixto
     output:
     """
-    
     
     if block.is_all_in_targets():
         print("all targets")
@@ -248,12 +247,12 @@ def is_open_def_recursive(block):
 
 
 def is_open_def(model, targets):
-    targets = sorted(targets,key=lambda tg:tg.sym)
+    targets = sorted(targets, key=lambda tg: tg.sym)
     assert len(set(tg.arity for tg in targets)) == 1
     assert not model.relations
     
-    tuples = set(TupleHistory(t,targets) for t in product(model.universe, repeat=targets[0].arity))
-
+    tuples = set(TupleHistory(t, targets) for t in product(model.universe, repeat=targets[0].arity))
+    
     start_block = Block(model.operations.values(), tuples, targets)
     return is_open_def_recursive(start_block)
 
