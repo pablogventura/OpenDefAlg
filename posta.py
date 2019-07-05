@@ -268,21 +268,22 @@ def main():
     for t in targets_rels:
         del model.relations[t.sym]
         targets[t.arity].append(t)
-    targets_rels = targets[2]
-    if not targets_rels:
-        print("ERROR: NO TARGET RELATIONS FOUND")
-        return
-    start_hit = time()
-    
-    try:
-        f = is_open_def(model, targets_rels)
-        print("DEFINABLE")
-        print("\tT := %s" % f)
-    except Counterexample as e:
-        print("NOT DEFINABLE")
-        print("\tCounterexample: %s" % e)
-    time_hit = time() - start_hit
-    print("Elapsed time: %s" % time_hit)
+    for arity in sorted(targets.keys()):
+        targets_rels = targets[arity]
+        if not targets_rels:
+            print("ERROR: NO TARGET RELATIONS FOUND")
+            return
+        start_hit = time()
+        
+        try:
+            f = is_open_def(model, targets_rels)
+            print("DEFINABLE")
+            print("\tT := %s" % f)
+        except Counterexample as e:
+            print("NOT DEFINABLE")
+            print("\tCounterexample: %s" % e)
+        time_hit = time() - start_hit
+        print("Elapsed time: %s" % time_hit)
 
 
 if __name__ == "__main__":
