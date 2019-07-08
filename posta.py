@@ -118,7 +118,7 @@ class IndicesTupleGenerator:
     
     def formula_diferenciadora(self, index):
         """Asumo que acaban de diferenciarse"""
-        return formulas.eq(self.sintactico[-1], self.sintactico[index])
+        return formulas.eq(self.last_term, self.sintactico[index])
     
     def hubo_nuevo(self):
         if self.forked:
@@ -144,7 +144,7 @@ class Block():
     Clase del bloque que va llevando el mismo hit
     """
     
-    def __init__(self, operations, tuples, targets, generator=None, formula=None):
+    def __init__(self, operations, tuples, targets, generator=None, formula=None, fs=None):
         """
         :param tuples_in_targets: tuplas en el target
         :param tuples_out_targets: tuplas fuera del target
@@ -156,8 +156,10 @@ class Block():
         self.arity = targets[0].arity
         if formula is None:
             self.formula = formulas.true()
+            self.fs = [formulas.true()] * len(self.targets)
         else:
             self.formula = formula
+            self.fs = fs
         if generator is None:
             self.generator = IndicesTupleGenerator(self.operations, self.arity, None, [], list(range(self.arity)),
                                                    formulas.variables(*range(self.arity)))
@@ -193,22 +195,29 @@ class Block():
         else:
             generators = self.generator.fork(len(result.keys()))
             results = []
+            fneg = formulas.true()
+            negados = []
             for i, index in enumerate(result.keys()):
                 tuples_new_block = result[index]
+                
+                
                 if any(th[0].has_generated for th in tuples_new_block.values()):
                     # TODO alguien genero dentro del bloque (todos generan)
                     # en realidad bastaria con ver la primer tupla nomas
                     generators[i].hubo_nuevo()
+                    negados.append((i,index))
+                    continue
                     # f = self.formula & -generators[i].formula_diferenciadora(index)  # formula valida
                 else:
-                    # f = self.formula & generators[i].formula_diferenciadora(index)  # formula valida
-                    pass
-                for j in range(len(self.generator.sintactico)):
-                    if j == index:
-                        continue
-                    # f = f & -generators[i].formula_diferenciadora(j)  # formula no valida
+                    f = self.formula & generators[i].formula_diferenciadora(index)  # formula valida
+                    fneg = fneg & -generators[i].formula_diferenciadora(index)
                 tuples_new_block = [th for l in tuples_new_block.values() for th in l]
-                results.append(Block(self.operations, tuples_new_block, self.targets, generators[i], formulas.false()))
+                results.append(Block(self.operations, tuples_new_block, self.targets, generators[i], f, self.fs))
+            for i, index in negados:
+                tuples_new_block = result[index]
+                tuples_new_block = [th for l in tuples_new_block.values() for th in l]
+                f = self.formula & fneg
+                results.append(Block(self.operations, tuples_new_block, self.targets, generators[i], f, self.fs))
             return results
     
     def __repr__(self):
@@ -232,6 +241,7 @@ def is_open_def_recursive(block):
     elif block.is_disjunt_to_targets():
         print("disjunt targets")
         return formulas.false()
+        return -block.formula
     
     elif block.finished():
         raise Counterexample(block.tuples)
