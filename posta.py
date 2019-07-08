@@ -242,11 +242,11 @@ def is_open_def_recursive(block):
         print("disjunt targets")
         return formulas.false()
         return -block.formula
-    
     elif block.finished():
         raise Counterexample(block.tuples)
         # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
-    
+    print(block)
+    print("mixed target")
     blocks = block.step()
     formula = formulas.false()
     for b in blocks:
@@ -261,7 +261,7 @@ def is_open_def(model, targets):
     assert len(set(tg.arity for tg in targets)) == 1
     assert not model.relations
     
-    tuples = set(TupleHistory(t, targets) for t in product(model.universe, repeat=targets[0].arity))
+    tuples = set(TupleHistory(t, targets) for t in permutations(model.universe, r=targets[0].arity))
     operations = defaultdict(list)
     for op in model.operations.values():
         operations[op.arity].append(op)
