@@ -5,7 +5,7 @@
 Modulo para calcular HIT de una tupla en un modelo
 """
 import formulas
-from itertools import product, tee, permutations
+from itertools import product, tee, permutations, chain
 from collections import defaultdict
 from parser.parser import parser
 from time import time
@@ -87,13 +87,13 @@ class IndicesTupleGenerator:
             self.generator = generator
         self.nuevos = nuevos
         self.arity = arity
-        self.ops = sorted(operations, key=lambda f: f.sym)
+        self.ops = operations
         
         self.finished = False
         self.forked = False
         self.last_term = last_term  # ultima term
         
-        assert type(self.ops) == list
+        assert type(self.ops) == dict
     
     def step(self):
         if self.forked:
@@ -109,7 +109,7 @@ class IndicesTupleGenerator:
             
             except StopIteration:
                 if self.nuevos:
-                    self.generator = product(self.ops, permutations_forced(self.viejos, self.nuevos, self.arity))
+                    self.generator = chain(*[product(self.ops[arity], permutations_forced(self.viejos, self.nuevos, arity)) for arity in self.ops])
                     self.viejos += self.nuevos
                     self.nuevos = []  # todos se gastaron para hacer el nuevo generador
                     self.finished = False
@@ -252,8 +252,13 @@ def is_open_def(model, targets):
     assert not model.relations
     
     tuples = set(TupleHistory(t, targets) for t in product(model.universe, repeat=targets[0].arity))
-    
-    start_block = Block(model.operations.values(), tuples, targets)
+    operations = defaultdict(list)
+    for op in model.operations.values():
+        operations[op.arity].append(op)
+    for arity in operations:
+        operations[arity].sort(key=lambda o: o.sym)
+    operations = dict(operations)
+    start_block = Block(operations, tuples, targets)
     return is_open_def_recursive(start_block)
 
 
