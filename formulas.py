@@ -131,21 +131,30 @@ class Formula(object):
         pass
 
     def __and__(self, other):
-        if isinstance(self,TrueFormula):
+        if isinstance(other, AndFormula):
+            return other & self
+        elif isinstance(self,TrueFormula):
             return other
         elif isinstance(other,TrueFormula):
             return self
         elif isinstance(self,FalseFormula) or isinstance(other,FalseFormula):
             return false()
+        elif self == -other:
+            return false()
 
         return AndFormula([self,other])
 
     def __or__(self, other):
-        if isinstance(self,FalseFormula):
+
+        if isinstance(other, OrFormula):
+            return other | self
+        elif isinstance(self,FalseFormula):
             return other
         elif isinstance(other,FalseFormula):
             return self
         elif isinstance(self,TrueFormula) or isinstance(other,TrueFormula):
+            return true()
+        elif self == -other:
             return true()
 
         return OrFormula([self,other])
@@ -170,7 +179,7 @@ class Formula(object):
     def __hash__(self):
         return hash(repr(self))
     
-    def extension(self,model):
+    def extension(self,model,arity=None):
         result = set()
         vs = list(self.free_vars())
         for t in product(model.universe,repeat=len(vs)):
@@ -188,6 +197,9 @@ class NegFormula(Formula):
     def __repr__(self):
         return "¬ %s" % self.f
 
+    def __neg__(self):
+        return self.f
+
     def free_vars(self):
         return self.f.free_vars()
 
@@ -200,7 +212,7 @@ class BinaryOpFormula(Formula):
     Clase general de las formulas tipo f1 η ... η fn
     """
     def __init__(self, subformulas):
-        self.subformulas = subformulas
+        self.subformulas = set(subformulas)
 
     def free_vars(self):
         result = set()
@@ -212,6 +224,8 @@ class OrFormula(BinaryOpFormula):
     """
     Disjuncion entre formulas
     """
+
+            
     def __repr__(self):
         result = " ∨ ".join(str(f) for f in self.subformulas)
         result = "(" + result + ")"
@@ -223,7 +237,7 @@ class OrFormula(BinaryOpFormula):
         elif isinstance(other,FalseFormula):
             return self
 
-        return OrFormula(self.subformulas + [other])
+        return OrFormula(self.subformulas | {other})
 
     def satisfy(self,model,vector):
         # el or y el and de python son lazy
@@ -233,6 +247,8 @@ class AndFormula(BinaryOpFormula):
     """
     Conjuncion entre formulas
     """
+
+                
     def __repr__(self):
         result = " ∧ ".join(str(f) for f in self.subformulas)
         result = "(" + result + ")"
@@ -243,8 +259,8 @@ class AndFormula(BinaryOpFormula):
             return other
         elif isinstance(other,TrueFormula):
             return self
-
-        return AndFormula(self.subformulas + [other])
+        # TODO CONTRADICCIONES ACA
+        return AndFormula(self.subformulas | {other})
 
     def satisfy(self,model,vector):
         # el or y el and de python son lazy
@@ -362,6 +378,11 @@ class TrueFormula(Formula):
 
     def satisfy(self, model, vector):
         return True
+    
+    def extension(self,model,arity=None):
+        if arity is None:
+            raise ValueError("Extension of a non declared formula")
+        return set(product(model.universe,repeat=arity))
 
 class FalseFormula(Formula):
     """
@@ -376,6 +397,11 @@ class FalseFormula(Formula):
 
     def satisfy(self, model, vector):
         return False
+
+    def extension(self, model, arity=None):
+        if arity is None:
+            raise ValueError("Extension of a non declared formula")
+        return set()
 # Shortcuts
 
 def variables(*lvars):

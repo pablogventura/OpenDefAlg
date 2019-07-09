@@ -304,7 +304,7 @@ def main():
     time_hit = time() - start_hit
     print("Elapsed time: %s" % time_hit)
     if check_solution:
-        assert targets_rels[0].superrel.r==formula.extension(model), "MODEL CHECKING FAILED!"
+        assert targets_rels[0].superrel.r==formula.extension(model,arity=targets_rels[0].superrel.arity), "MODEL CHECKING FAILED!"
         print("Formula successfully checked")
 
 
