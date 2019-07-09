@@ -1,5 +1,7 @@
 from collections import defaultdict, OrderedDict
 import formulas
+from first_order.relops import Relation, Operation
+
 
 def quotient(s, f):
     # cociente del conjunto s, por la funcion f
@@ -41,20 +43,36 @@ def preprocesamiento(T):
             result[-1].add(tuple(t[i] for i in indices))
     return set(frozenset(e) for e in result)
 
+
 def formula_patron(t):
     f = formulas.true()
     vs = formulas.variables(*list(range(len(t))))
     tn = tuple(OrderedDict.fromkeys(t))
-    for i,a in enumerate(t):
-        for j,b in enumerate(t):
+    for i, a in enumerate(t):
+        for j, b in enumerate(t):
             if j <= i:
                 continue
             if a == b:
-                f = f & formulas.eq(vs[i],vs[j])
+                f = f & formulas.eq(vs[i], vs[j])
             else:
                 f = f & -formulas.eq(vs[i], vs[j])
-    return f,tn
+    return f, tn
+
+
 def preprocesamiento2(target):
-    result = defaultdict(set)
-    for t in target:
-        result[formula_patron(t)].add(t)
+    #target_formula = formulas.RelSym(target.sym,target.arity)(*formulas.variables(*list(range(target.arity))))
+    fs = defaultdict(set)
+    ts = defaultdict(list)
+    for t in target.r:
+        p, tn = formula_patron(t)
+        fs[len(tn)].add(p)
+        ts[len(tn)].append(tn)
+    result = []
+    for arity in fs:
+        f = formulas.false()
+        while fs[arity]:
+            f = f | fs[arity].pop()
+        fs[arity] = f
+        result.append(Relation(target.sym + "a%s" % arity,arity,ts[arity],fs[arity]))
+    # return list(fs.values()),list(ts.values())
+    return result

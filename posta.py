@@ -218,6 +218,7 @@ class Block():
                 tuples_new_block = [th for l in tuples_new_block.values() for th in l]
                 f = self.formula & fneg
                 results.append(Block(self.operations, tuples_new_block, self.targets, generators[i], f, self.fs))
+                
             return results
     
     def __repr__(self):
@@ -236,17 +237,13 @@ def is_open_def_recursive(block):
     """
     
     if block.is_all_in_targets():
-        print("all targets")
+        
         return block.formula
     elif block.is_disjunt_to_targets():
-        print("disjunt targets")
         return formulas.false()
-        return -block.formula
     elif block.finished():
         raise Counterexample(block.tuples)
         # como es un bloque mixto, no es defel hit parcial esta terminado, no definible y termino
-    print(block)
-    print("mixed target")
     blocks = block.step()
     formula = formulas.false()
     for b in blocks:
@@ -258,7 +255,7 @@ def is_open_def_recursive(block):
 
 def is_open_def(model, targets):
     targets = sorted(targets, key=lambda tg: tg.sym)
-    assert len(set(tg.arity for tg in targets)) == 1
+    assert len(targets) == 1
     assert not model.relations
     
     tuples = set(TupleHistory(t, targets) for t in permutations(model.universe, r=targets[0].arity))
@@ -268,7 +265,7 @@ def is_open_def(model, targets):
     for arity in operations:
         operations[arity].sort(key=lambda o: o.sym)
     operations = dict(operations)
-    start_block = Block(operations, tuples, targets)
+    start_block = Block(operations, tuples, targets,formula=targets[0].formula)
     return is_open_def_recursive(start_block)
 
 
@@ -283,22 +280,28 @@ def main():
     for t in targets_rels:
         del model.relations[t.sym]
         targets[t.arity].append(t)
+    formula = formulas.false()
+    start_hit = time()
+    print("Deciding definability for subrelations")
     for arity in sorted(targets.keys()):
         targets_rels = targets[arity]
         if not targets_rels:
             print("ERROR: NO TARGET RELATIONS FOUND")
             return
-        start_hit = time()
-        
         try:
             f = is_open_def(model, targets_rels)
-            print("DEFINABLE")
-            print("\tT := %s" % f)
+            print("\t%s is definable by %s" % (targets[arity][0].sym,f))
+            formula = formula | f
         except Counterexample as e:
             print("NOT DEFINABLE")
             print("\tCounterexample: %s" % e)
-        time_hit = time() - start_hit
-        print("Elapsed time: %s" % time_hit)
+            time_hit = time() - start_hit
+            print("Elapsed time: %s" % time_hit)
+    print("DEFINABLE")
+    print("\t%s := %s" % (targets_rels[0].sym[:-2], formula))
+    time_hit = time() - start_hit
+    print("Elapsed time: %s" % time_hit)
+    
 
 
 if __name__ == "__main__":

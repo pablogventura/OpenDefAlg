@@ -126,12 +126,12 @@ def parser(path=None, preprocess=True, verbose=True):
         for sym in relations:
             if sym.startswith("T"):
                 rel = relations[sym]
-                prep_relations = prep_relations.union(preprocessing.preprocesamiento(rel.r))
+                prep_relations = prep_relations.union(preprocessing.preprocesamiento2(rel))
         relations = {sym:relations[sym] for sym in relations if not sym.startswith("T")}
         if verbose:
             print ("Target thinning turned T into %s Ts" % len(prep_relations))
-        for i,rel in enumerate(prep_relations):
-            relations["T%s" % i]=Relation("T%s" % i, len(next(iter(rel))), rel)
+        for r in prep_relations:
+            relations[r.sym]=r
 
     return Model(universe, relations, operations)
 

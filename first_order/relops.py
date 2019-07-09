@@ -10,11 +10,11 @@ class Relation(object):
     Relation
     """
 
-    def __init__(self, sym, arity, rel=set()):
+    def __init__(self, sym, arity, rel=set(), formula=None):
         self.sym = sym
         self.arity = arity
         self.r = rel
-
+        self.formula = formula
     def add(self, t):
         if len(t) != self.arity:
             raise ValueError('%s is not of arity %s' % (t, self.arity))

@@ -135,6 +135,8 @@ class Formula(object):
             return other
         elif isinstance(other,TrueFormula):
             return self
+        #elif isinstance(self,FalseFormula) or isinstance(other,FalseFormula):
+        #    return false()
 
         return AndFormula([self,other])
 
@@ -143,6 +145,8 @@ class Formula(object):
             return other
         elif isinstance(other,FalseFormula):
             return self
+        #elif isinstance(self,TrueFormula) or isinstance(other,TrueFormula):
+        #    return true()
 
         return OrFormula([self,other])
 
@@ -165,6 +169,14 @@ class Formula(object):
 
     def __hash__(self):
         return hash(repr(self))
+    
+    def extension(self,model):
+        result = set()
+        arity = len(self.free_vars())
+        for t in product(model.universe,repeat=arity):
+            if self.satisfy(model,t):
+                result.add(t)
+        return result
 
 class NegFormula(Formula):
     """
