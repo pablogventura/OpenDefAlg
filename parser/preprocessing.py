@@ -1,5 +1,5 @@
-from collections import defaultdict
-
+from collections import defaultdict, OrderedDict
+import formulas
 
 def quotient(s, f):
     # cociente del conjunto s, por la funcion f
@@ -40,3 +40,21 @@ def preprocesamiento(T):
         for t in q[p]:
             result[-1].add(tuple(t[i] for i in indices))
     return set(frozenset(e) for e in result)
+
+def formula_patron(t):
+    f = formulas.true()
+    vs = formulas.variables(*list(range(len(t))))
+    tn = tuple(OrderedDict.fromkeys(t))
+    for i,a in enumerate(t):
+        for j,b in enumerate(t):
+            if j <= i:
+                continue
+            if a == b:
+                f = f & formulas.eq(vs[i],vs[j])
+            else:
+                f = f & -formulas.eq(vs[i], vs[j])
+    return f,tn
+def preprocesamiento2(target):
+    result = defaultdict(set)
+    for t in target:
+        result[formula_patron(t)].add(t)
