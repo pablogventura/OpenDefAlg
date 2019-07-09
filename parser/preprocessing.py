@@ -68,11 +68,15 @@ def preprocesamiento2(target):
         fs[len(tn)].add(p)
         ts[len(tn)].append(tn)
     result = []
-    for arity in fs:
-        f = formulas.false()
-        while fs[arity]:
-            f = f | fs[arity].pop()
-        fs[arity] = f
-        result.append(Relation(target.sym + "a%s" % arity,arity,ts[arity],fs[arity],target))
+    if len(fs) > 1:
+        for arity in fs:
+            f = formulas.false()
+            while fs[arity]:
+                f = f | fs[arity].pop()
+            fs[arity] = f
+            result.append(Relation(target.sym + "a%s" % arity,arity,ts[arity],fs[arity],target))
+    else:
+        arity = list(fs.keys())[0]
+        result.append(Relation(target.sym + "a%s" % arity, arity, ts[arity], formulas.true(), target))
     # return list(fs.values()),list(ts.values())
     return result
