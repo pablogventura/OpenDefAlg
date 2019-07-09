@@ -298,6 +298,7 @@ def main():
             print("\tCounterexample: %s" % e)
             time_hit = time() - start_hit
             print("Elapsed time: %s" % time_hit)
+            return
     print("DEFINABLE")
     print("\t%s := %s" % (targets_rels[0].sym[:-2], formula))
     time_hit = time() - start_hit

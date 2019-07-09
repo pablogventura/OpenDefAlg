@@ -135,8 +135,8 @@ class Formula(object):
             return other
         elif isinstance(other,TrueFormula):
             return self
-        #elif isinstance(self,FalseFormula) or isinstance(other,FalseFormula):
-        #    return false()
+        elif isinstance(self,FalseFormula) or isinstance(other,FalseFormula):
+            return false()
 
         return AndFormula([self,other])
 
@@ -145,8 +145,8 @@ class Formula(object):
             return other
         elif isinstance(other,FalseFormula):
             return self
-        #elif isinstance(self,TrueFormula) or isinstance(other,TrueFormula):
-        #    return true()
+        elif isinstance(self,TrueFormula) or isinstance(other,TrueFormula):
+            return true()
 
         return OrFormula([self,other])
 
