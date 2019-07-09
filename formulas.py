@@ -172,9 +172,9 @@ class Formula(object):
     
     def extension(self,model):
         result = set()
-        arity = len(self.free_vars())
-        for t in product(model.universe,repeat=arity):
-            if self.satisfy(model,t):
+        vs = list(self.free_vars())
+        for t in product(model.universe,repeat=len(vs)):
+            if self.satisfy(model,{vs[i]:t[i] for i in range(len(t))}):
                 result.add(t)
         return result
 

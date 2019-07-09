@@ -73,6 +73,6 @@ def preprocesamiento2(target):
         while fs[arity]:
             f = f | fs[arity].pop()
         fs[arity] = f
-        result.append(Relation(target.sym + "a%s" % arity,arity,ts[arity],fs[arity]))
+        result.append(Relation(target.sym + "a%s" % arity,arity,ts[arity],fs[arity],target))
     # return list(fs.values()),list(ts.values())
     return result

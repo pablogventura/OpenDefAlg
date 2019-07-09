@@ -11,7 +11,7 @@ class ParserError(Exception):
     """
     Sintax error while parsing
     """
-
+    
     def __init__(self, line, message):
         super(ParserError, self).__init__(("Line %s: " % line) + message)
 
@@ -76,7 +76,7 @@ def parser(path=None, preprocess=True, verbose=True):
                     if line.count(" ") == 1:
                         # empieza una operacion
                         current_op = parse_defop(line)
-                        op_missing_tuples = len(universe)**current_op.arity
+                        op_missing_tuples = len(universe) ** current_op.arity
                         if verbose:
                             print("universe %s" % universe)
                             print("%s tuples: %s" %
@@ -86,7 +86,8 @@ def parser(path=None, preprocess=True, verbose=True):
                         current_rel, rel_missing_tuples = parse_defrel(line)
                         if verbose:
                             try:
-                                print("%s density: %f" % (current_rel.sym, float(rel_missing_tuples)/(len(universe)**current_rel.arity)))
+                                print("%s density: %f" % (
+                                current_rel.sym, float(rel_missing_tuples) / (len(universe) ** current_rel.arity)))
                             except:
                                 print("WARNING: no pudo calcular la densidad")
                 else:
@@ -127,15 +128,15 @@ def parser(path=None, preprocess=True, verbose=True):
             if sym.startswith("T"):
                 rel = relations[sym]
                 prep_relations = prep_relations.union(preprocessing.preprocesamiento2(rel))
-        relations = {sym:relations[sym] for sym in relations if not sym.startswith("T")}
+        relations = {sym: relations[sym] for sym in relations if not sym.startswith("T")}
         if verbose:
-            print ("Target thinning turned T into %s Ts" % len(prep_relations))
+            print("Target thinning turned T into %s Ts" % len(prep_relations))
         for r in prep_relations:
-            relations[r.sym]=r
-
+            relations[r.sym] = r
+    
     return Model(universe, relations, operations)
 
 
 if __name__ == "__main__":
     MODEL = parser()
-    #print(MODEL)
+    # print(MODEL)

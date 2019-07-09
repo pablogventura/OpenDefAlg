@@ -270,6 +270,7 @@ def is_open_def(model, targets):
 
 
 def main():
+    check_solution = True
     try:
         model = parser(sys.argv[1], preprocess=True)
     except IndexError:
@@ -301,7 +302,9 @@ def main():
     print("\t%s := %s" % (targets_rels[0].sym[:-2], formula))
     time_hit = time() - start_hit
     print("Elapsed time: %s" % time_hit)
-    
+    if check_solution:
+        assert targets_rels[0].superrel.r==formula.extension(model), "MODEL CHECKING FAILED!"
+        print("Formula successfully checked")
 
 
 if __name__ == "__main__":
