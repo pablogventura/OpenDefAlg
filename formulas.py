@@ -236,7 +236,13 @@ class OrFormula(BinaryOpFormula):
             return other
         elif isinstance(other,FalseFormula):
             return self
-
+        elif isinstance(other,OrFormula):
+            for a in self.subformulas:
+                if -a in other.subformulas:
+                    return true()
+            return OrFormula(self.subformulas | other.subformulas)
+        elif -other in self.subformulas:
+            return true()
         return OrFormula(self.subformulas | {other})
 
     def satisfy(self,model,vector):
@@ -259,7 +265,13 @@ class AndFormula(BinaryOpFormula):
             return other
         elif isinstance(other,TrueFormula):
             return self
-        # TODO CONTRADICCIONES ACA
+        elif isinstance(other,AndFormula):
+            for a in self.subformulas:
+                if -a in other.subformulas:
+                    return false()
+            return AndFormula(self.subformulas | other.subformulas)
+        elif -other in self.subformulas:
+            return false()
         return AndFormula(self.subformulas | {other})
 
     def satisfy(self,model,vector):
