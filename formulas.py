@@ -24,7 +24,16 @@ class Term(object):
         raise NotImplemented
 
     def __hash__(self):
-        return hash(repr(self))
+        raise NotImplemented
+
+    def __le__(self, other):
+        if self.grade() == other.grade():
+            return repr(self)<=repr(other)
+        else:
+            return self.grade() <= other.grade()
+    
+    def grade(self):
+        raise NotImplemented
 
     def __eq__(self,other):
         return hash(self) == hash(other)
@@ -41,10 +50,16 @@ class Variable(Term):
 
     def __repr__(self):
         return self.sym
+    
+    def __hash__(self):
+        return hash(self.sym)
 
     def free_vars(self):
         return {self}
-
+    
+    def grade(self):
+        return 0
+    
     def evaluate(self, model, vector):
         try:
             return vector[self]
@@ -64,7 +79,10 @@ class OpSym(object):
             raise ValueError("Arity not correct or any isn't a term")
 
         return OpTerm(self,args)
-
+    
+    def __hash__(self):
+        return hash((self.op,self.arity))
+    
     def __repr__(self):
         return self.op
 
@@ -82,6 +100,12 @@ class OpTerm(Term):
         result += ", ".join(map(repr,self.args))
         result += ")"
         return result
+    
+    def __hash__(self):
+        return hash((self.sym,self.args))
+    
+    def grade(self):
+        return 1 + max(t.grade() for t in self.args)
 
     def free_vars(self):
         return set.union(*[f.free_vars() for f in self.args])
@@ -177,7 +201,7 @@ class Formula(object):
         return hash(self) == hash(other)
 
     def __hash__(self):
-        return hash(repr(self))
+        raise NotImplemented
     
     def extension(self,model,arity=None):
         result = set()
@@ -199,6 +223,9 @@ class NegFormula(Formula):
 
     def __neg__(self):
         return self.f
+    
+    def __hash__(self):
+        return hash(("-",self.f))
 
     def free_vars(self):
         return self.f.free_vars()
@@ -212,7 +239,7 @@ class BinaryOpFormula(Formula):
     Clase general de las formulas tipo f1 η ... η fn
     """
     def __init__(self, subformulas):
-        self.subformulas = set(subformulas)
+        self.subformulas = frozenset(subformulas)
 
     def free_vars(self):
         result = set()
@@ -224,7 +251,8 @@ class OrFormula(BinaryOpFormula):
     """
     Disjuncion entre formulas
     """
-
+    def __hash__(self):
+        return hash(("or",self.subformulas))
             
     def __repr__(self):
         result = " ∨ ".join(str(f) for f in self.subformulas)
@@ -253,7 +281,8 @@ class AndFormula(BinaryOpFormula):
     """
     Conjuncion entre formulas
     """
-
+    def __hash__(self):
+        return hash(("and",self.subformulas))
                 
     def __repr__(self):
         result = " ∧ ".join(str(f) for f in self.subformulas)
@@ -294,6 +323,8 @@ class RelSym(object):
 
     def __repr__(self):
         return self.rel
+    def __hash__(self):
+        return hash((self.rel,self.arity))
 
 class RelFormula(Formula):
     """
@@ -316,6 +347,8 @@ class RelFormula(Formula):
     def satisfy(self, model, vector):
         args = [t.evaluate(model,vector) for t in self.args]
         return model.relations[self.sym.rel](*args)
+    def __hash__(self):
+        return hash((self.sym,self.args))
 
 class EqFormula(Formula):
     """
@@ -324,7 +357,8 @@ class EqFormula(Formula):
     def __init__(self, t1, t2):
         if not (isinstance(t1, Term) and isinstance(t2, Term)):
             raise ValueError("Must be terms:%s %s" % (t1,t2))
-
+        if t2 <= t1:
+            t1,t2 = t2,t1
         self.t1=t1
         self.t2=t2
 
@@ -336,6 +370,8 @@ class EqFormula(Formula):
 
     def satisfy(self, model, vector):
         return self.t1.evaluate(model,vector) == self.t2.evaluate(model,vector)
+    def __hash__(self):
+        return hash((self.t1,self.t2))
 
 class QuantifierFormula(Formula):
     """
@@ -361,6 +397,8 @@ class ForAllFormula(QuantifierFormula):
             if not self.f.satisfy(model,vector):
                 return False
         return True
+    def __hash__(self):
+        return hash(("forall",self.var,self.f))
 
 class ExistsFormula(QuantifierFormula):
     """
@@ -376,6 +414,8 @@ class ExistsFormula(QuantifierFormula):
             if self.f.satisfy(model,vector):
                 return True
         return False
+    def __hash__(self):
+        return hash(("exists",self.var,self.f))
 
 class TrueFormula(Formula):
     """
@@ -395,6 +435,8 @@ class TrueFormula(Formula):
         if arity is None:
             raise ValueError("Extension of a non declared formula")
         return set(product(model.universe,repeat=arity))
+    def __hash__(self):
+        return hash(repr(self))
 
 class FalseFormula(Formula):
     """
@@ -414,6 +456,8 @@ class FalseFormula(Formula):
         if arity is None:
             raise ValueError("Extension of a non declared formula")
         return set()
+    def __hash__(self):
+        return hash(repr(self))
 # Shortcuts
 
 def variables(*lvars):
