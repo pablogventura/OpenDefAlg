@@ -68,7 +68,9 @@ def preprocesamiento2(target):
         fs[len(tn)].add(p)
         ts[len(tn)].append(tn)
     result = []
-    if len(fs) > 1:
+    if len(fs) == 0:
+        result = []
+    elif len(fs) > 1:
         for arity in fs:
             f = formulas.false()
             while fs[arity]:

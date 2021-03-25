@@ -2,7 +2,7 @@
 # !/usr/bin/env python
 
 from functools import total_ordering
-
+from first_order import formulas
 
 @total_ordering
 class Relation(object):
@@ -10,12 +10,16 @@ class Relation(object):
     Relation
     """
     
-    def __init__(self, sym, arity, rel=set(), formula=None, superrel=None):
+    def __init__(self, sym, arity, rel=set(), pattern=None, superrel=None):
+        self.syntax_sym = formulas.RelSym(sym,arity)
         self.sym = sym
         self.arity = arity
         self.r = rel
-        self.formula = formula
-        self.superrel = superrel
+        self.pattern = pattern
+        if superrel is None:
+            self.superrel = self
+        else:
+            self.superrel = superrel
     
     def add(self, t):
         if len(t) != self.arity:
@@ -67,6 +71,7 @@ class Operation(object):
     """
     
     def __init__(self, sym, arity):
+        self.syntax_sym = formulas.OpSym(sym, arity)
         self.sym = sym
         self.arity = arity
         self.op = dict()
